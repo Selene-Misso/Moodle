@@ -1,0 +1,10 @@
+@CHARSET "UTF-8";
+
+td.valueRight {
+	text-align: right;
+	width: 10ex;
+}
+
+td.valueCenter {
+	text-align: center;
+}

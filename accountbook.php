@@ -17,6 +17,7 @@ mysql
 <head>
 <meta charset="UTF-8">
 <title>出納帳</title>
+<link rel="stylesheet" type="text/css" href="css/styles.css">
 <script>
 <!--
 	// 入出金切り替え処理用に
@@ -131,29 +132,99 @@ while ($row = $st->fetch()) {
 <th>入金</th>
 <th>出金</th>
 </tr></thead>
-<tbody>
-<tr>
-<td></td>
-<td><time datetime="2014-11-01">11/01</time></td>
-<td>前月繰越</td>
-<td></td>
-<td>10</td>
-<td>0</td>
-</tr>
-<tr>
-<td><input type="radio" name="selectRow" value="1"></td>
-<td><time datetime="2014-11-03">11/03</time></td>
-<td>現金</td>
-<td>AA商店に支払</td>
-<td>500</td>
-<td></td>
-</tr>
-</tbody>
-<tfoot><tr>
-<td colspan="4"></td>
-<td>510</td>
-<td>0</td>
-</tr></tfoot>
+<?php
+
+// DB接続
+$pdo = new PDO("mysql:dbname=accountbook", "mishiro", "314159");
+// 文字コード設定
+$pdo->query("SET NAMES utf8");
+
+// 前月繰越の表示
+$str = "SELECT T.in_out_flg, sum(J.jounal_AMOUNT) as total
+			FROM accountbook.titles as T, accountbook.journal as J
+			WHERE J.titles_ID = T.titles_id and
+			J.jounal_DATE <= '2014-10-31'
+			group by T.in_out_flg;";
+$st = $pdo->query($str);
+while ($row = $st->fetch()) {
+	$row_flg_inout =  htmlspecialchars($row['in_out_flg']);
+	$row_total = htmlspecialchars($row['total']);
+
+	if($row_flg_inout == 0){
+		$last_total_in = $row_total;
+	}else{
+		$last_total_out = $row_total;
+	}
+}
+echo "<tbody>";
+echo "<tr><td>&nbsp;</td><td>11/01</td>";
+echo "<td>前月繰越</td><td>&nbsp;</td>";
+echo "<td class=\"valueRight\">".
+		number_format($last_total_in).
+		"</td><td class=\"valueRight\">".
+		number_format($last_total_out).
+		"</td></tr>";
+
+// 各行の生成
+$str = "select jounal_ID, date_format(jounal_DATE,'%m/%d') as jounal_DATE, 
+			titles_name, jounal_ABST, jounal_AMOUNT, in_out_flg
+			from accountbook.titles as T, accountbook.journal as J
+			where J.titles_ID = T.titles_id and
+			J.jounal_DATE between '2014-11-01' and '2014-11-30'
+			order by jounal_DATE, jounal_ID asc;";
+$st = $pdo->query($str);
+while ($row = $st->fetch()) {
+	$row_id = htmlspecialchars($row['jounal_ID']);
+	$row_flg_inout = htmlspecialchars($row['in_out_flg']);
+	$row_title = htmlspecialchars($row['titles_name']);
+	$row_amount = htmlspecialchars ( $row ['jounal_AMOUNT'] );
+	$row_abst = htmlspecialchars ( $row ['jounal_ABST']);
+	$row_date = htmlspecialchars ( $row ['jounal_DATE']);
+	
+	// チェックボックス,日付,科目,摘要,入金,出金
+	echo "<tr>";
+	echo "<td class=\"valueCenter\"><input type=\"radio\" name=\"isSelect\" value=\"$row_id\"></td>";
+	echo "<td>$row_date</td>";
+	echo "<td>$row_title</td>";
+	echo "<td>$row_abst</td>";
+	if($row_flg_inout == 0){ // 入金時
+		echo "<td class=\"valueRight\">".number_format($row_amount)."</td>";
+		echo "<td>&nbsp;</td>";
+	}else{ // 出金
+		echo "<td>&nbsp;</td>";
+		echo "<td class=\"valueRight\">".number_format($row_amount)."</td>";
+	}
+	echo "</tr>";
+}
+echo "</tbody><tfoot>";
+
+// 合計表示
+$str = "SELECT T.in_out_flg, sum(J.jounal_AMOUNT) as total
+				FROM accountbook.titles as T, accountbook.journal as J
+				WHERE J.titles_ID = T.titles_id and
+				J.jounal_DATE between '2014-11-01' and '2014-11-30'
+				group by T.in_out_flg;";
+$st = $pdo->query($str);
+while ($row = $st->fetch()) {
+	$row_flg_inout =  htmlspecialchars($row['in_out_flg']);
+	$row_total = htmlspecialchars($row['total']);
+	
+	if($row_flg_inout == 0){
+		$row_total_in = $row_total + $last_total_in;
+	}else{
+		$row_total_out = $row_total + $last_total_out;
+	}
+}
+echo "<tr><td colspan=4>&nbsp;</td>";
+echo "<td class=\"valueRight\">".
+		number_format($row_total_in).
+		"</td><td class=\"valueRight\">".
+		number_format($row_total_out).
+		"</td></tr>";
+
+echo "</tfoot>";
+
+?>
 </table>
 </div>
 <footer>
