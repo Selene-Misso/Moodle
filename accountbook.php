@@ -78,7 +78,7 @@ if ($_POST) {
 </form></td>
 <th>日付</th>
 <th>科目</th>
-<th>適用</th>
+<th>摘要</th>
 <th>金額</th>
 <td rowspan="2">
 <button type="submit" >入力</button><br>
@@ -89,7 +89,7 @@ if ($_POST) {
 min="<?php echo $thisYear."-".$thisMonth."-01" ?>" 
 max="<?php echo $thisYear."-".$thisMonth."-".date("t", mktime(0,0,0,$thisMonth,1,$thisYear));?>">
 </td>
-<td><select name="inout">
+<td><select name="inout" class="kamoku">
 <?php
 
 // DB接続
@@ -116,8 +116,8 @@ while ($row = $st->fetch()) {
 ?>
 
 </select></td>
-<td><input type="text" name="abstract"></td>
-<td><input type="number" name="amount"></td>
+<td><input type="text" name="abstract" class="tekiyou"></td>
+<td><input type="number" name="amount" min="0" pattern="^[0-9,]+$" class="valueRight"></td>
 </tr>
 </table>
 </div>
@@ -185,8 +185,8 @@ while ($row = $st->fetch()) {
 	echo "<tr>";
 	echo "<td class=\"valueCenter\"><input type=\"radio\" name=\"isSelect\" value=\"$row_id\"></td>";
 	echo "<td>$row_date</td>";
-	echo "<td>$row_title</td>";
-	echo "<td>$row_abst</td>";
+	echo "<td class=\"kamoku\">$row_title</td>";
+	echo "<td class=\"tekiyou\">$row_abst</td>";
 	if($row_flg_inout == 0){ // 入金時
 		echo "<td class=\"valueRight\">".number_format($row_amount)."</td>";
 		echo "<td>&nbsp;</td>";

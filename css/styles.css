@@ -1,10 +1,18 @@
 @CHARSET "UTF-8";
 
-td.valueRight {
+.valueRight {
 	text-align: right;
-	width: 10ex;
+	width: 15ex;
 }
 
 td.valueCenter {
 	text-align: center;
+}
+
+.kamoku {
+	width: 15ex;
+}
+
+.tekiyou {
+	width: 40ex;
 }
