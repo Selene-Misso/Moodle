@@ -41,7 +41,12 @@ if ($_POST) {
 <?php
 
 // DB接続
+try{
 $pdo = new PDO("mysql:dbname=accountbook", "mishiro", "314159");
+}catch (PDOException $e){
+	print('Error:'.$e->getMessage());
+	die();
+}
 // 文字コード設定
 $pdo->query("SET NAMES utf8");
 

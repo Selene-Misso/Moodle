@@ -39,6 +39,7 @@ $flg_switch = 0;
 if ($_POST) {
 	$flg_switch = $_POST['switch'];
 }
+
 ?>
 
 
@@ -62,65 +63,81 @@ if ($_POST) {
 </header>
 
 <div role="application">
-<form action="add.php" method="POST">
-<table border="1">
-<tr>
-<td rowspan="2">
-<form action="accountbook.php" method="POST" name="selectForm">
-<label><input type="radio" name="switch" value="0"
- onclick="return swichInOut();"
- <?php if($flg_switch != 1){echo "checked=\"checked\"";} ?>>
- 入金</label><br>
-<label><input type="radio" name="switch" value="1"
- onclick="return swichInOut();"
- <?php if($flg_switch == 1){echo "checked=\"checked\"";} ?>>
- 出金
-</label>
-</form></td>
-<th>日付</th>
-<th>科目</th>
-<th>摘要</th>
-<th>金額</th>
-<td rowspan="2">
-<button type="submit" name="add">入力</button><br>
-<button type="submit" name="del">削除</button></td>
-</tr>
-<tr>
-<td><input type="date" name="kamoku_date" 
-min="<?php echo $thisYear."-".$thisMonth."-01" ?>" 
-max="<?php echo $thisYear."-".$thisMonth."-".date("t", mktime(0,0,0,$thisMonth,1,$thisYear));?>">
-</td>
-<td><select name="kamoku_val" class="kamoku">
-<?php
+<form action="update.php" method="POST">
+<?php 
+
+// 対象レコード取得
+$selectID = $_POST['isSelect'];
 
 // DB接続
 $pdo = new PDO("mysql:dbname=accountbook", "mishiro", "314159");
 // 文字コード設定
 $pdo->query("SET NAMES utf8");
 
-// クエリ実行
-$st = $pdo->query("SELECT * FROM titles WHERE in_out_flg = ".$flg_switch);
+$str = "select jounal_ID, date_format(jounal_DATE,'%Y-%m-%d') as jounal_DATE,
+titles_name, jounal_ABST, jounal_AMOUNT, in_out_flg, J.titles_ID
+from accountbook.titles as T, accountbook.journal as J
+where J.titles_ID = T.titles_ID
+and J.jounal_ID = $selectID;";
+$st = $pdo->query($str);
+$row = $st->fetch();
 
-// クエリ処理
-$isfirst = 1;
+$row_id = htmlspecialchars($row['jounal_ID']);
+$row_flg_inout = htmlspecialchars($row['in_out_flg']);
+$row_title_ID = htmlspecialchars($row['titles_ID']);
+$row_title = htmlspecialchars($row['titles_name']);
+$row_amount = htmlspecialchars ( $row ['jounal_AMOUNT'] );
+$row_abst = htmlspecialchars ( $row ['jounal_ABST']);
+$row_date = htmlspecialchars ( $row ['jounal_DATE']);
+$thisYear = date("Y", strtotime($row['jounal_DATE']));
+$thisMonth = date("m", strtotime($row['jounal_DATE']));
+
+// チェックボックス,日付,科目,摘要,入金,出金
+echo '<table border="1">
+		<tr>
+		<td rowspan="2">
+		<label><input type="radio" name="switch" value="0" disabled
+		';
+if($row_flg_inout != 1){echo "checked=\"checked\"";}
+echo '> 入金</label><br>
+		<label><input type="radio" name="switch" value="1" disabled
+		';
+if($row_flg_inout == 1){echo "checked=\"checked\"";}
+echo '> 出金</label></td>
+		<th>日付</th>
+		<th>科目</th>
+		<th>摘要</th>
+		<th>金額</th>
+		<td rowspan="2">
+		<button type="submit" name="mod">修正</button><br>
+		<button type="submit" name="del">削除</button></td>
+		</tr>';
+// jounalIDを保持する隠しフィールド
+echo "<tr><td><input type=\"hidden\" name=\"selectID\" value=\"$selectID\">\n";
+echo "<input type=\"date\" name=\"kamoku_date\" value=\"$row_date\" ";
+echo "min=\"".$thisYear."-".$thisMonth."-01\"";
+echo "max=\"".$thisYear."-".$thisMonth."-".date("t", mktime(0,0,0,$thisMonth,1,$thisYear))."\"";
+echo "></td>\n";
+// 科目選択
+echo "<td><select name=\"kamoku_val\" class=\"kamoku\">$row_title";
+$st = $pdo->query("SELECT * FROM titles WHERE in_out_flg = ".$row_flg_inout);
 while ($row = $st->fetch()) {
 	$flg_id = $row['titles_id'];
 	$title = htmlspecialchars($row['titles_name']);
-	if($isfirst == 1){
+	if($flg_id == $row_title_ID){
 		echo "<option value=\"".$flg_id."\" selected>$title</option>\n";
 		$isfirst = 0;
 	}else{
 		echo "<option value=\"".$flg_id."\">$title</option>\n";
 	}
 }
+echo "</select></td>\n";
+
+echo "<td><input type=\"text\" name=\"abstract\" class=\"tekiyou\" value=\"$row_abst\"></td>\n";
+echo "<td><input type=\"number\" name=\"amount\" min=\"0\" class=\"valueRight\" value=\"$row_amount\"></td>\n";
+echo "</tr>\n</table>";
 
 ?>
-
-</select></td>
-<td><input type="text" name="abstract" class="tekiyou"></td>
-<td><input type="number" name="amount" min="0" class="valueRight"></td>
-</tr>
-</table>
 </form>
 </div>
 
@@ -128,7 +145,7 @@ while ($row = $st->fetch()) {
 <form action="mod.php" method="POST">
 <table border="1">
 <thead><tr>
-<th><button type="submit" name="select_row">選択</button></th>
+<th><button type="submit" >選択</button></th>
 <th>日付</th>
 <th>科目</th>
 <th>摘要</th>
@@ -186,7 +203,9 @@ while ($row = $st->fetch()) {
 	
 	// チェックボックス,日付,科目,摘要,入金,出金
 	echo "<tr>";
-	echo "<td class=\"valueCenter\"><input type=\"radio\" name=\"isSelect\" value=\"$row_id\"></td>";
+	echo "<td class=\"valueCenter\"><input type=\"radio\" name=\"isSelect\" value=\"$row_id\"";
+	if($selectID == $row_id ) {echo 'checked="checked" ';}
+	echo "></td>";
 	echo "<td>$row_date</td>";
 	echo "<td class=\"kamoku\">$row_title</td>";
 	echo "<td class=\"tekiyou\">$row_abst</td>";
@@ -229,11 +248,10 @@ echo "</tfoot>";
 
 ?>
 </table>
-</form>
 </div>
 <footer>
 <?php 
-echo $thisMonth;
+echo "ID=".$_POST['isSelect'];
 ?>
 <p>作成: 147-D8690 美代 苑生</p>
 </footer>
