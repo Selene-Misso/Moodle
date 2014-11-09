@@ -33,13 +33,6 @@ mysql
 </script>
 </head>
 <body>
-<?php 
-// 入出金用 前処理
-$flg_switch = 0;
-if ($_POST) {
-	$flg_switch = $_POST['switch'];
-}
-?>
 
 
 <header>
@@ -62,21 +55,15 @@ if ($_POST) {
 </header>
 
 <div role="application">
-<form action="add.php" method="POST">
+<form name="addform" action="add.php" method="POST">
 <table border="1">
 <tr>
 <td rowspan="2">
-<form action="accountbook.php" method="POST" name="selectForm">
-<label><input type="radio" name="switch" value="0"
- onclick="return swichInOut();"
- <?php if($flg_switch != 1){echo "checked=\"checked\"";} ?>>
+<label><input type="radio" name="switch" value="0" onChange="selectIO(this)" checked="checked">
  入金</label><br>
-<label><input type="radio" name="switch" value="1"
- onclick="return swichInOut();"
- <?php if($flg_switch == 1){echo "checked=\"checked\"";} ?>>
- 出金
-</label>
-</form></td>
+<label><input type="radio" name="switch" value="1" onChange="selectIO(this)">
+ 出金</label>
+</td>
 <th>日付</th>
 <th>科目</th>
 <th>摘要</th>
@@ -92,39 +79,94 @@ max="<?php echo $thisYear."-".$thisMonth."-".date("t", mktime(0,0,0,$thisMonth,1
 </td>
 <td><select name="kamoku_val" class="kamoku">
 <?php
-
 // DB接続
 $pdo = new PDO("mysql:dbname=accountbook", "mishiro", "314159");
 // 文字コード設定
 $pdo->query("SET NAMES utf8");
 
-// クエリ実行
-$st = $pdo->query("SELECT * FROM titles WHERE in_out_flg = ".$flg_switch);
-
-// クエリ処理
-$isfirst = 1;
-while ($row = $st->fetch()) {
+$sql = 'SELECT * FROM titles WHERE in_out_flg = 0;';
+$sth = $pdo->query($sql);
+while ($row = $sth->fetch()) {
 	$flg_id = $row['titles_id'];
 	$title = htmlspecialchars($row['titles_name']);
-	if($isfirst == 1){
-		echo "<option value=\"".$flg_id."\" selected>$title</option>\n";
-		$isfirst = 0;
-	}else{
-		echo "<option value=\"".$flg_id."\">$title</option>\n";
-	}
+	echo "<option value=\"$flg_id\">$title</option>";
 }
-
 ?>
-
 </select></td>
 <td><input type="text" name="abstract" class="tekiyou" required="required"></td>
 <td><input type="number" name="amount" min="1" class="valueRight" required="required"></td>
 </tr>
 </table>
 </form>
+<script type="text/javascript">
+<!--
+/* 
+ * 選択肢の配列の宣言
+ */
+// 表示文字列
+var titles = new Array();
+// 送信する値
+var values = new Array();
+
+// 挿入する値はPHPから生成
+<?php 
+for($in_out = 0; $in_out <= 1; $in_out++){
+	$sql = 'SELECT * FROM titles WHERE in_out_flg = :io';
+	$sth = $pdo->prepare($sql, array(PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY));
+	$sth->execute(array(':io' => $in_out));
+	
+	$titlesArray="";
+	$valuesArray="";
+	while ($row = $sth->fetch()) {
+		$flg_id = $row['titles_id'];
+		$title = htmlspecialchars($row['titles_name']);
+		$valuesArray = $valuesArray.$flg_id.",";
+		$titlesArray = $titlesArray.'"'.$title.'"'.",";
+	}
+	echo "titles['$in_out'] = new Array(".substr($titlesArray,0,-1).");\n";
+	echo "values['$in_out'] = new Array(".substr($valuesArray,0,-1).");\n";
+}
+?>
+
+/* 
+ * 入金出金を切り替える
+ */
+function selectIO(obj){
+	// <Select>を動的生成
+	createSelect(values[obj.value],titles[obj.value]);
+}
+
+/*
+ * <select>の生成
+ * @valueList OptionのValue値リスト
+ * @textList  OptionのText値リスト
+ */
+function createSelect(valueList, textList){
+	targetObj = addform.elements['kamoku_val'];
+	targetObj.length = 0;
+	
+	for( var i=0; i < valueList.length; i++){
+		creatOptions( targetObj, valueList[i], textList[i]);
+	}
+}
+
+/*
+ * <option>の生成
+ * @targetObj 上位の<select>オブジェクト
+ * @val valueの指定値
+ * @str 表示文字列
+ */
+function creatOptions( targetObj, val, str ){
+	targetObj.length++;
+	targetObj.options[targetObj.length-1].value = val;
+	targetObj.options[targetObj.length-1].text  = str;
+}
+
+//-->
+</script>
 </div>
 
-<div role="main">
+<div role='main'>
 <form action="mod.php" method="POST">
 <table border="1">
 <thead><tr>
@@ -137,10 +179,6 @@ while ($row = $st->fetch()) {
 </tr></thead>
 <?php
 
-// DB接続
-$pdo = new PDO("mysql:dbname=accountbook", "mishiro", "314159");
-// 文字コード設定
-$pdo->query("SET NAMES utf8");
 
 // 前月繰越の表示
 $str = "SELECT T.in_out_flg, sum(J.jounal_AMOUNT) as total
