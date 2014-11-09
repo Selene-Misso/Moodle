@@ -18,19 +18,6 @@ mysql
 <meta charset="UTF-8">
 <title>出納帳</title>
 <link rel="stylesheet" type="text/css" href="css/styles.css">
-<script>
-<!--
-	// 入出金切り替え処理用に
-	// マウスクリック時にPOSTする
-	function swichInOut(){
-		var s = document.forms['selectForm'];
-		s.method = 'POST';
-		s.action = 'accountbook.php';
-		s.submit();
-		return true;
-	}
-// -->
-</script>
 </head>
 <body>
 
@@ -38,30 +25,31 @@ mysql
 <header>
 <h1>出納帳</h1>
 <form action="accountbook.php" method="GET">
-<input type="month" name="selectMonth" value=
+<input type="month" name="selectMonth" tabindex="1" size="5" value=
 <?php 
-	$thisYear  = date('Y');
-	$thisMonth = date('m');
-	if ($_POST) {
+	if (isset($_GET['selectMonth'])) {
 		$num1 = explode("-", $_GET['selectMonth']);
 		$thisYear = $num1[0];
 		$thisMonth= $num1[1];
+	}else{
+		$thisYear  = date('Y');
+		$thisMonth = date('m');
 	}
 	echo '"',$thisYear, "-", $thisMonth, '"';
 ?>
  required >
-<button type="submit" >移動</button>
+<button type="submit" tabindex="2">移動</button>
 </form>
 </header>
 
 <div role="application">
 <form name="addform" action="add.php" method="POST">
-<table border="1">
+<table border="1" class="tbl">
 <tr>
 <td rowspan="2">
-<label><input type="radio" name="switch" value="0" onChange="selectIO(this)" checked="checked">
+<label><input type="radio" name="switch" tabindex="3" value="0" onChange="selectIO(this)" checked="checked">
  入金</label><br>
-<label><input type="radio" name="switch" value="1" onChange="selectIO(this)">
+<label><input type="radio" name="switch" tabindex="4" value="1" onChange="selectIO(this)">
  出金</label>
 </td>
 <th>日付</th>
@@ -69,15 +57,15 @@ mysql
 <th>摘要</th>
 <th>金額</th>
 <td rowspan="2">
-<button type="submit" name="add">追加</button><br>
-<button type="submit" name="del" disabled>削除</button></td>
+<button type="submit" name="add" tabindex="9">追加</button><br>
+<button type="submit" name="del" disabled tabindex="10">削除</button></td>
 </tr>
 <tr>
-<td><input type="date" name="kamoku_date" required="required"
+<td><input type="date" name="kamoku_date" required="required" tabindex="5"
 min="<?php echo $thisYear."-".$thisMonth."-01" ?>" 
 max="<?php echo $thisYear."-".$thisMonth."-".date("t", mktime(0,0,0,$thisMonth,1,$thisYear));?>">
 </td>
-<td><select name="kamoku_val" class="kamoku">
+<td><select name="kamoku_val" class="kamoku" tabindex="6">
 <?php
 // DB接続
 $pdo = new PDO("mysql:dbname=accountbook", "mishiro", "314159");
@@ -89,12 +77,12 @@ $sth = $pdo->query($sql);
 while ($row = $sth->fetch()) {
 	$flg_id = $row['titles_id'];
 	$title = htmlspecialchars($row['titles_name']);
-	echo "<option value=\"$flg_id\">$title</option>";
+	echo "<option value=\"$flg_id\">$title</option>\n";
 }
 ?>
 </select></td>
-<td><input type="text" name="abstract" class="tekiyou" required="required"></td>
-<td><input type="number" name="amount" min="1" class="valueRight" required="required"></td>
+<td><input type="text" name="abstract" class="tekiyou" required="required" tabindex="7"></td>
+<td><input type="number" name="amount" min="1" class="valueRight" required="required" tabindex="8"></td>
 </tr>
 </table>
 </form>
@@ -168,9 +156,9 @@ function creatOptions( targetObj, val, str ){
 
 <div role='main'>
 <form action="mod.php" method="POST">
-<table border="1">
+<table border="1" class="tbl">
 <thead><tr>
-<th><button type="submit" name="select_row">選択</button></th>
+<th><button type="submit" name="select_row" tabindex="12">選択</button></th>
 <th>日付</th>
 <th>科目</th>
 <th>摘要</th>
@@ -184,7 +172,7 @@ function creatOptions( targetObj, val, str ){
 $str = "SELECT T.in_out_flg, sum(J.jounal_AMOUNT) as total
 			FROM accountbook.titles as T, accountbook.journal as J
 			WHERE J.titles_ID = T.titles_id and
-			J.jounal_DATE <= '2014-10-31'
+			J.jounal_DATE < '$thisYear-$thisMonth-01'
 			group by T.in_out_flg;";
 $st = $pdo->query($str);
 $last_total_in = 0;
@@ -200,8 +188,8 @@ while ($row = $st->fetch()) {
 	}
 }
 echo "<tbody>";
-echo "<tr><td>&nbsp;</td><td>11/01</td>";
-echo "<td>前月繰越</td><td>&nbsp;</td>";
+echo "<tr><td>&nbsp;</td><td class=\"valueCenter\">$thisMonth/01</td>";
+echo "<td class=\"kamoku\">前月繰越</td><td class=\"tekiyou\">&nbsp;</td>";
 echo "<td class=\"valueRight\">".
 		number_format($last_total_in).
 		"</td><td class=\"valueRight\">".
@@ -213,7 +201,7 @@ $str = "select jounal_ID, date_format(jounal_DATE,'%m/%d') as jounal_DATE,
 			titles_name, jounal_ABST, jounal_AMOUNT, in_out_flg
 			from accountbook.titles as T, accountbook.journal as J
 			where J.titles_ID = T.titles_id and
-			J.jounal_DATE between '2014-11-01' and '2014-11-30'
+			J.jounal_DATE between '$thisYear-$thisMonth-01' and '$thisYear-$thisMonth-".date("t", mktime(0,0,0,$thisMonth,1,$thisYear))."'
 			order by jounal_DATE, jounal_ID asc;";
 $st = $pdo->query($str);
 while ($row = $st->fetch()) {
@@ -227,7 +215,7 @@ while ($row = $st->fetch()) {
 	// チェックボックス,日付,科目,摘要,入金,出金
 	echo "<tr>";
 	echo "<td class=\"valueCenter\"><input type=\"radio\" name=\"isSelect\" value=\"$row_id\" required=\"required\"></td>";
-	echo "<td>$row_date</td>";
+	echo "<td class=\"valueCenter\">$row_date</td>";
 	echo "<td class=\"kamoku\">$row_title</td>";
 	echo "<td class=\"tekiyou\">$row_abst</td>";
 	if($row_flg_inout == 0){ // 入金時
@@ -245,17 +233,19 @@ echo "</tbody><tfoot>\n";
 $str = "SELECT T.in_out_flg, sum(J.jounal_AMOUNT) as total
 				FROM accountbook.titles as T, accountbook.journal as J
 				WHERE J.titles_ID = T.titles_id and
-				J.jounal_DATE between '2014-11-01' and '2014-11-30'
+				J.jounal_DATE between '$thisYear-$thisMonth-01' and '$thisYear-$thisMonth-".date("t", mktime(0,0,0,$thisMonth,1,$thisYear))."'
 				group by T.in_out_flg;";
 $st = $pdo->query($str);
+$row_total_in = $last_total_in;
+$row_total_out= $last_total_out;
 while ($row = $st->fetch()) {
-	$row_flg_inout =  htmlspecialchars($row['in_out_flg']);
-	$row_total = htmlspecialchars($row['total']);
+	$row_flg_inout = $row['in_out_flg'];
+	$row_total = $row['total'];
 	
 	if($row_flg_inout == 0){
-		$row_total_in = $row_total + $last_total_in;
+		$row_total_in += $row_total;
 	}else{
-		$row_total_out = $row_total + $last_total_out;
+		$row_total_out += $row_total;
 	}
 }
 echo "<tr><td class=\"valueCenter\">
@@ -276,9 +266,6 @@ echo "</tfoot>";
 </form>
 </div>
 <footer>
-<?php 
-echo $thisMonth;
-?>
 <p>作成: 147-D8690 美代 苑生</p>
 </footer>
 </body>

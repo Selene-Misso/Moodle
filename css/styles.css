@@ -7,6 +7,7 @@
 
 td.valueCenter {
 	text-align: center;
+	width: 7ex;
 }
 
 .kamoku {
@@ -15,4 +16,9 @@ td.valueCenter {
 
 .tekiyou {
 	width: 40ex;
+}
+
+.tbl {
+	margin-top: 10px;
+	margin-bottom: 10px;
 }

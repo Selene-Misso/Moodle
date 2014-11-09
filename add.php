@@ -77,7 +77,12 @@ if(isset($_POST['add'])) {
 ?>
 
 <form action="accountbook.php">
-<button type="submit" name="back">戻る</button>
+<?php 
+$thisYear = date("Y", strtotime($_POST["kamoku_date"]));
+$thisMonth = date("m", strtotime($_POST["kamoku_date"]));
+echo "<input type=\"hidden\" name=\"selectMonth\" value=\"$thisYear-$thisMonth\">";
+echo "<button type=\"submit\">戻る</button>"
+?>
 </form>
 </div>
 </body>

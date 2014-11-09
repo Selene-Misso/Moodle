@@ -18,19 +18,6 @@ mysql
 <meta charset="UTF-8">
 <title>出納帳</title>
 <link rel="stylesheet" type="text/css" href="css/styles.css">
-<script>
-<!--
-	// 入出金切り替え処理用に
-	// マウスクリック時にPOSTする
-	function swichInOut(){
-		var s = document.forms['selectForm'];
-		s.method = 'POST';
-		s.action = 'accountbook.php';
-		s.submit();
-		return true;
-	}
-// -->
-</script>
 </head>
 <body>
 <?php 
@@ -66,12 +53,12 @@ $thisMonth = date("m", strtotime($row['jounal_DATE']));
 <header>
 <h1>出納帳</h1>
 <form action="accountbook.php" method="GET">
-<input type="month" name="selectMonth" value=
+<input type="month" name="selectMonth" tabindex="1" value=
 <?php 
 	echo '"',$thisYear, "-", $thisMonth, '"';
 ?>
  disabled>
-<button type="submit" disabled>移動</button>
+<button type="submit" disabled tabindex="2">移動</button>
 </form>
 </header>
 
@@ -80,14 +67,14 @@ $thisMonth = date("m", strtotime($row['jounal_DATE']));
 <?php 
 
 // チェックボックス,日付,科目,摘要,入金,出金
-echo '<table border="1">
+echo '<table border="1" class="tbl">
 		<tr>
 		<td rowspan="2">
-		<label><input type="radio" name="switch" value="0" disabled
+		<label><input type="radio" name="switch" value="0" disabled tabindex="3"
 		';
 if($row_flg_inout != 1){echo "checked=\"checked\"";}
 echo '> 入金</label><br>
-		<label><input type="radio" name="switch" value="1" disabled
+		<label><input type="radio" name="switch" value="1" disabled tabindex="4"
 		';
 if($row_flg_inout == 1){echo "checked=\"checked\"";}
 echo '> 出金</label>';
@@ -97,18 +84,18 @@ echo '<th>日付</th>
 		<th>摘要</th>
 		<th>金額</th>
 		<td rowspan="2">
-		<button type="submit" name="mod">修正</button><br>
-		<button type="submit" name="del">削除</button></td>
+		<button type="submit" name="mod" tabindex="10">修正</button><br>
+		<button type="submit" name="del" tabindex="11">削除</button></td>
 		</tr>';
 // jounalIDを保持する隠しフィールド
 echo "<tr><td><input type=\"hidden\" name=\"selectID\" value=\"$selectID\">\n";
-echo "<input type=\"date\" name=\"kamoku_date\" value=\"$row_date\" ";
+echo "<input type=\"date\" name=\"kamoku_date\" value=\"$row_date\" tabindex=\"5\" ";
 echo "min=\"".$thisYear."-".$thisMonth."-01\"";
 echo "max=\"".$thisYear."-".$thisMonth."-".date("t", mktime(0,0,0,$thisMonth,1,$thisYear))."\"";
 echo "></td>\n";
 // 科目選択
 echo "<td><input type=\"hidden\" name=\"kamoku_title\" value=\"$row_title\">\n
-		<select name=\"kamoku_val\" class=\"kamoku\">";
+		<select name=\"kamoku_val\" class=\"kamoku\"  tabindex=\"8\">";
 $st = $pdo->query("SELECT * FROM titles WHERE in_out_flg = ".$row_flg_inout);
 while ($row = $st->fetch()) {
 	$flg_id = $row['titles_id'];
@@ -122,8 +109,8 @@ while ($row = $st->fetch()) {
 }
 echo "</select></td>\n";
 
-echo "<td><input type=\"text\" name=\"abstract\" class=\"tekiyou\" value=\"$row_abst\"></td>\n";
-echo "<td><input type=\"number\" name=\"amount\" min=\"0\" class=\"valueRight\" value=\"$row_amount\"></td>\n";
+echo "<td><input type=\"text\" name=\"abstract\" tabindex=\"8\" class=\"tekiyou\" value=\"$row_abst\"></td>\n";
+echo "<td><input type=\"number\" name=\"amount\" min=\"1\" tabindex=\"9\" class=\"valueRight\" value=\"$row_amount\"></td>\n";
 echo "</tr>\n</table>";
 
 ?>
@@ -132,9 +119,9 @@ echo "</tr>\n</table>";
 
 <div role='main'>
 <form action="mod.php" method="POST">
-<table border="1">
+<table border="1" class="tbl">
 <thead><tr>
-<th><button type="submit" >選択</button></th>
+<th><button type="submit" tabindex="12">選択</button></th>
 <th>日付</th>
 <th>科目</th>
 <th>摘要</th>
@@ -152,7 +139,7 @@ $pdo->query("SET NAMES utf8");
 $str = "SELECT T.in_out_flg, sum(J.jounal_AMOUNT) as total
 			FROM accountbook.titles as T, accountbook.journal as J
 			WHERE J.titles_ID = T.titles_id and
-			J.jounal_DATE <= '2014-10-31'
+			J.jounal_DATE < '$thisYear-$thisMonth-01'
 			group by T.in_out_flg;";
 $st = $pdo->query($str);
 $last_total_in = 0;
@@ -168,8 +155,8 @@ while ($row = $st->fetch()) {
 	}
 }
 echo "<tbody>";
-echo "<tr><td>&nbsp;</td><td>11/01</td>";
-echo "<td>前月繰越</td><td>&nbsp;</td>";
+echo "<tr><td>&nbsp;</td><td class=\"valueCenter\"> $thisMonth/01 </td>";
+echo "<td class=\"kamoku\">前月繰越</td><td class=\"tekiyou\">&nbsp;</td>";
 echo "<td class=\"valueRight\">".
 		number_format($last_total_in).
 		"</td><td class=\"valueRight\">".
@@ -181,7 +168,7 @@ $str = "select jounal_ID, date_format(jounal_DATE,'%m/%d') as jounal_DATE,
 			titles_name, jounal_ABST, jounal_AMOUNT, in_out_flg
 			from accountbook.titles as T, accountbook.journal as J
 			where J.titles_ID = T.titles_id and
-			J.jounal_DATE between '2014-11-01' and '2014-11-30'
+			J.jounal_DATE between '$thisYear-$thisMonth-01' and '$thisYear-$thisMonth-".date("t", mktime(0,0,0,$thisMonth,1,$thisYear))."'
 			order by jounal_DATE, jounal_ID asc;";
 $st = $pdo->query($str);
 while ($row = $st->fetch()) {
@@ -197,7 +184,7 @@ while ($row = $st->fetch()) {
 	echo "<td class=\"valueCenter\"><input type=\"radio\" name=\"isSelect\" value=\"$row_id\"";
 	if($selectID == $row_id ) {echo 'checked="checked" ';}
 	echo "></td>";
-	echo "<td>$row_date</td>";
+	echo "<td class=\"valueCenter\">$row_date</td>";
 	echo "<td class=\"kamoku\">$row_title</td>";
 	echo "<td class=\"tekiyou\">$row_abst</td>";
 	if($row_flg_inout == 0){ // 入金時
@@ -215,17 +202,19 @@ echo "</tbody><tfoot>\n";
 $str = "SELECT T.in_out_flg, sum(J.jounal_AMOUNT) as total
 				FROM accountbook.titles as T, accountbook.journal as J
 				WHERE J.titles_ID = T.titles_id and
-				J.jounal_DATE between '2014-11-01' and '2014-11-30'
+				J.jounal_DATE between '$thisYear-$thisMonth-01' and '$thisYear-$thisMonth-".date("t", mktime(0,0,0,$thisMonth,1,$thisYear))."'
 				group by T.in_out_flg;";
 $st = $pdo->query($str);
+$row_total_in = $last_total_in;
+$row_total_out= $last_total_out;
 while ($row = $st->fetch()) {
 	$row_flg_inout =  htmlspecialchars($row['in_out_flg']);
 	$row_total = htmlspecialchars($row['total']);
 	
 	if($row_flg_inout == 0){
-		$row_total_in = $row_total + $last_total_in;
+		$row_total_in += $row_total;
 	}else{
-		$row_total_out = $row_total + $last_total_out;
+		$row_total_out += $row_total;
 	}
 }
 echo "<tr>";
@@ -247,9 +236,7 @@ echo "</tfoot>";
 </form>
 </div>
 <footer>
-<?php 
-echo "ID=".$_POST['isSelect'];
-?>
+
 <p>作成: 147-D8690 美代 苑生</p>
 </footer>
 </body>
