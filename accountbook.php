@@ -82,11 +82,11 @@ if ($_POST) {
 <th>摘要</th>
 <th>金額</th>
 <td rowspan="2">
-<button type="submit" name="add">入力</button><br>
-<button type="submit" name="del">削除</button></td>
+<button type="submit" name="add">追加</button><br>
+<button type="submit" name="del" disabled>削除</button></td>
 </tr>
 <tr>
-<td><input type="date" name="kamoku_date" 
+<td><input type="date" name="kamoku_date" required="required"
 min="<?php echo $thisYear."-".$thisMonth."-01" ?>" 
 max="<?php echo $thisYear."-".$thisMonth."-".date("t", mktime(0,0,0,$thisMonth,1,$thisYear));?>">
 </td>
@@ -117,8 +117,8 @@ while ($row = $st->fetch()) {
 ?>
 
 </select></td>
-<td><input type="text" name="abstract" class="tekiyou"></td>
-<td><input type="number" name="amount" min="0" class="valueRight"></td>
+<td><input type="text" name="abstract" class="tekiyou" required="required"></td>
+<td><input type="number" name="amount" min="1" class="valueRight" required="required"></td>
 </tr>
 </table>
 </form>
@@ -149,6 +149,8 @@ $str = "SELECT T.in_out_flg, sum(J.jounal_AMOUNT) as total
 			J.jounal_DATE <= '2014-10-31'
 			group by T.in_out_flg;";
 $st = $pdo->query($str);
+$last_total_in = 0;
+$last_total_out = 0;
 while ($row = $st->fetch()) {
 	$row_flg_inout =  htmlspecialchars($row['in_out_flg']);
 	$row_total = htmlspecialchars($row['total']);
@@ -186,7 +188,7 @@ while ($row = $st->fetch()) {
 	
 	// チェックボックス,日付,科目,摘要,入金,出金
 	echo "<tr>";
-	echo "<td class=\"valueCenter\"><input type=\"radio\" name=\"isSelect\" value=\"$row_id\"></td>";
+	echo "<td class=\"valueCenter\"><input type=\"radio\" name=\"isSelect\" value=\"$row_id\" required=\"required\"></td>";
 	echo "<td>$row_date</td>";
 	echo "<td class=\"kamoku\">$row_title</td>";
 	echo "<td class=\"tekiyou\">$row_abst</td>";
@@ -218,7 +220,11 @@ while ($row = $st->fetch()) {
 		$row_total_out = $row_total + $last_total_out;
 	}
 }
-echo "<tr><td colspan=4>&nbsp;</td>";
+echo "<tr><td class=\"valueCenter\">
+		<button type=\"submit\"
+		formaction=\"accountbook.php?selectMonth=".$thisYear."-".$thisMonth."\">新規</button>
+		</td>";
+echo "<td colspan=3>&nbsp;</td>";
 echo "<td class=\"valueRight\">".
 		number_format($row_total_in).
 		"</td><td class=\"valueRight\">".

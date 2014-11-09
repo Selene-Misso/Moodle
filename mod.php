@@ -34,38 +34,6 @@ mysql
 </head>
 <body>
 <?php 
-// 入出金用 前処理
-$flg_switch = 0;
-if ($_POST) {
-	$flg_switch = $_POST['switch'];
-}
-
-?>
-
-
-<header>
-<h1>出納帳</h1>
-<form action="accountbook.php" method="GET">
-<input type="month" name="selectMonth" value=
-<?php 
-	$thisYear  = date('Y');
-	$thisMonth = date('m');
-	if ($_POST) {
-		$num1 = explode("-", $_GET['selectMonth']);
-		$thisYear = $num1[0];
-		$thisMonth= $num1[1];
-	}
-	echo '"',$thisYear, "-", $thisMonth, '"';
-?>
- required >
-<button type="submit" >移動</button>
-</form>
-</header>
-
-<div role="application">
-<form action="update.php" method="POST">
-<?php 
-
 // 対象レコード取得
 $selectID = $_POST['isSelect'];
 
@@ -92,6 +60,25 @@ $row_date = htmlspecialchars ( $row ['jounal_DATE']);
 $thisYear = date("Y", strtotime($row['jounal_DATE']));
 $thisMonth = date("m", strtotime($row['jounal_DATE']));
 
+?>
+
+
+<header>
+<h1>出納帳</h1>
+<form action="accountbook.php" method="GET">
+<input type="month" name="selectMonth" value=
+<?php 
+	echo '"',$thisYear, "-", $thisMonth, '"';
+?>
+ disabled>
+<button type="submit" disabled>移動</button>
+</form>
+</header>
+
+<div role='application'>
+<form action="update.php" method="POST">
+<?php 
+
 // チェックボックス,日付,科目,摘要,入金,出金
 echo '<table border="1">
 		<tr>
@@ -103,8 +90,9 @@ echo '> 入金</label><br>
 		<label><input type="radio" name="switch" value="1" disabled
 		';
 if($row_flg_inout == 1){echo "checked=\"checked\"";}
-echo '> 出金</label></td>
-		<th>日付</th>
+echo '> 出金</label>';
+echo "<input type=\"hidden\" name=\"switched\" value=\"$row_flg_inout\"></td>";
+echo '<th>日付</th>
 		<th>科目</th>
 		<th>摘要</th>
 		<th>金額</th>
@@ -119,7 +107,8 @@ echo "min=\"".$thisYear."-".$thisMonth."-01\"";
 echo "max=\"".$thisYear."-".$thisMonth."-".date("t", mktime(0,0,0,$thisMonth,1,$thisYear))."\"";
 echo "></td>\n";
 // 科目選択
-echo "<td><select name=\"kamoku_val\" class=\"kamoku\">$row_title";
+echo "<td><input type=\"hidden\" name=\"kamoku_title\" value=\"$row_title\">\n
+		<select name=\"kamoku_val\" class=\"kamoku\">";
 $st = $pdo->query("SELECT * FROM titles WHERE in_out_flg = ".$row_flg_inout);
 while ($row = $st->fetch()) {
 	$flg_id = $row['titles_id'];
@@ -141,7 +130,7 @@ echo "</tr>\n</table>";
 </form>
 </div>
 
-<div role="main">
+<div role='main'>
 <form action="mod.php" method="POST">
 <table border="1">
 <thead><tr>
@@ -166,6 +155,8 @@ $str = "SELECT T.in_out_flg, sum(J.jounal_AMOUNT) as total
 			J.jounal_DATE <= '2014-10-31'
 			group by T.in_out_flg;";
 $st = $pdo->query($str);
+$last_total_in = 0;
+$last_total_out = 0;
 while ($row = $st->fetch()) {
 	$row_flg_inout =  htmlspecialchars($row['in_out_flg']);
 	$row_total = htmlspecialchars($row['total']);
@@ -237,7 +228,12 @@ while ($row = $st->fetch()) {
 		$row_total_out = $row_total + $last_total_out;
 	}
 }
-echo "<tr><td colspan=4>&nbsp;</td>";
+echo "<tr>";
+echo "<td class=\"valueCenter\">
+		<button type=\"submit\" 
+		formaction=\"accountbook.php?selectMonth=".$thisYear."-".$thisMonth."\">新規</button>
+		</td>
+		<td colspan=3>&nbsp;</td>";
 echo "<td class=\"valueRight\">".
 		number_format($row_total_in).
 		"</td><td class=\"valueRight\">".
@@ -248,6 +244,7 @@ echo "</tfoot>";
 
 ?>
 </table>
+</form>
 </div>
 <footer>
 <?php 
