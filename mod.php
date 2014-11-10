@@ -21,17 +21,18 @@ mysql
 </head>
 <body>
 <?php 
+date_default_timezone_set('Asia/Tokyo');
 // 対象レコード取得
 $selectID = $_POST['isSelect'];
 
 // DB接続
-$pdo = new PDO("mysql:dbname=accountbook", "mishiro", "314159");
+$pdo = new PDO("mysql:dbname=mishiroDB", "mishiro", "314159");
 // 文字コード設定
 $pdo->query("SET NAMES utf8");
 
 $str = "select jounal_ID, date_format(jounal_DATE,'%Y-%m-%d') as jounal_DATE,
 titles_name, jounal_ABST, jounal_AMOUNT, in_out_flg, J.titles_ID
-from accountbook.titles as T, accountbook.journal as J
+from titles as T, journal as J
 where J.titles_ID = T.titles_ID
 and J.jounal_ID = $selectID;";
 $st = $pdo->query($str);
@@ -130,14 +131,9 @@ echo "</tr>\n</table>";
 </tr></thead>
 <?php
 
-// DB接続
-$pdo = new PDO("mysql:dbname=accountbook", "mishiro", "314159");
-// 文字コード設定
-$pdo->query("SET NAMES utf8");
-
 // 前月繰越の表示
 $str = "SELECT T.in_out_flg, sum(J.jounal_AMOUNT) as total
-			FROM accountbook.titles as T, accountbook.journal as J
+			FROM titles as T, journal as J
 			WHERE J.titles_ID = T.titles_id and
 			J.jounal_DATE < '$thisYear-$thisMonth-01'
 			group by T.in_out_flg;";
@@ -166,7 +162,7 @@ echo "<td class=\"valueRight\">".
 // 各行の生成
 $str = "select jounal_ID, date_format(jounal_DATE,'%m/%d') as jounal_DATE, 
 			titles_name, jounal_ABST, jounal_AMOUNT, in_out_flg
-			from accountbook.titles as T, accountbook.journal as J
+			from titles as T, journal as J
 			where J.titles_ID = T.titles_id and
 			J.jounal_DATE between '$thisYear-$thisMonth-01' and '$thisYear-$thisMonth-".date("t", mktime(0,0,0,$thisMonth,1,$thisYear))."'
 			order by jounal_DATE, jounal_ID asc;";
@@ -200,7 +196,7 @@ echo "</tbody><tfoot>\n";
 
 // 合計表示
 $str = "SELECT T.in_out_flg, sum(J.jounal_AMOUNT) as total
-				FROM accountbook.titles as T, accountbook.journal as J
+				FROM titles as T, journal as J
 				WHERE J.titles_ID = T.titles_id and
 				J.jounal_DATE between '$thisYear-$thisMonth-01' and '$thisYear-$thisMonth-".date("t", mktime(0,0,0,$thisMonth,1,$thisYear))."'
 				group by T.in_out_flg;";

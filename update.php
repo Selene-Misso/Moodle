@@ -12,8 +12,9 @@
 <div role='main'>
 
 <?php
+date_default_timezone_set('Asia/Tokyo');
 // DB接続
-$pdo = new PDO("mysql:dbname=accountbook", "mishiro", "314159");
+$pdo = new PDO("mysql:dbname=mishiroDB", "mishiro", "314159");
 // 文字コード設定
 $pdo->query("SET NAMES utf8");
 

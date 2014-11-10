@@ -42,7 +42,7 @@ if ($_POST) {
 
 // DB接続
 try{
-$pdo = new PDO("mysql:dbname=accountbook", "mishiro", "314159");
+$pdo = new PDO("mysql:dbname=mishiroDB", "mishiro", "314159");
 }catch (PDOException $e){
 	print('Error:'.$e->getMessage());
 	die();
@@ -76,13 +76,13 @@ while ($row = $st->fetch()) {
 	<?php
 	
 	// DB接続
-	$pdo = new PDO("mysql:dbname=accountbook", "mishiro", "314159");
+	$pdo = new PDO("mysql:dbname=mishiroDB", "mishiro", "314159");
 	// 文字コード設定
 	$pdo->query("SET NAMES utf8");
 	
 	// クエリ実行
 	$str = "SELECT T.in_out_flg, sum(J.jounal_AMOUNT) as total
-				FROM accountbook.titles as T, accountbook.journal as J
+				FROM titles as T, journal as J
 				WHERE J.titles_ID = T.titles_id and
 				J.jounal_DATE <= '2014-10-31'
 				group by T.in_out_flg;";
@@ -167,7 +167,7 @@ while ($row = $st->fetch()) {
 	<div id="input">
 	<?php 
 	// DB接続
-	$pdo = new PDO("mysql:dbname=accountbook", "mishiro", "314159");
+	$pdo = new PDO("mysql:dbname=mishiroDB", "mishiro", "314159");
 	// 文字コード設定
 	$pdo->query("SET NAMES utf8");
 	
